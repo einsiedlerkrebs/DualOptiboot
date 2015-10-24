@@ -1,11 +1,12 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // DualOptiboot
-// Optiboot based custom bootloader for Moteino
+// Optiboot based custom bootloader for Moteino - like chips
 // Enables wireless programming of Moteino wireless arduino clone
 // Copyright Felix Rusu (2013), felix@lowpowerlab.com
 // http://lowpowerlab.com/Moteino
 //
+// Changes are made by einsiedlkerkrebs to support the S25FL032P flashchip
 //////////////////////////////////////////////////////////////////////////
 //
 // This program is free software; you can redistribute it 
@@ -490,10 +491,10 @@ void appStart(uint8_t rstFlags) __attribute__ ((naked));
 #define SPIFLASH_STATUSREAD       0x05        // read status register
 #define SPIFLASH_WRITEENABLE      0x06        // write enable
 #define SPIFLASH_ARRAYREADLOWFREQ 0x03        // read array (low frequency)
-#define SPIFLASH_BLOCKERASE_32K   0x52        // erase one 32K block of flash memory
+#define SPIFLASH_BLOCKERASE_32K   0x52        // erase one 32K block of flash memory -- this is not working on S25FL032P
 #define SPIFLASH_BLOCKERASE_64K   0xD8        // erase one 32K block of flash memory
 #define SPIFLASH_JEDECID          0x9F        // read JEDEC ID
-//#define DEBUG_ON                            // uncomment to enable Serial debugging 
+#define DEBUG_ON                            // uncomment to enable Serial debugging 
                                               // (will output different characters depending on which path the bootloader takes)
 
 uint8_t SPI_transfer(uint8_t _data) {
@@ -618,7 +619,8 @@ void CheckFlashImage() {
 #endif
 
     //erase the first 32/64K block where flash image resided (atmega328 should be less than 31K, and atmega1284 can be up to 64K)
-    if (imagesize+10<=32768) FLASH_command(SPIFLASH_BLOCKERASE_32K, 1);
+    if (imagesize+10<=32768 || deviceId == 0x0102 ) //SPIFLASH_BLOCKERASE_32K is not working on the 32Mbit Spansion S25FL032P 
+	FLASH_command(SPIFLASH_BLOCKERASE_32K, 1); 
     else FLASH_command(SPIFLASH_BLOCKERASE_64K, 1);
     SPI_transfer(0);
     SPI_transfer(0);
